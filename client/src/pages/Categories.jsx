@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import Alert from "@/components/Alerts";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  deleteCategory,
   getAllCategories,
   insertCategory,
   updateCategory,
@@ -128,7 +129,12 @@ const Categories = () => {
     });
 
     if (result.isConfirmed) {
-      Alert.success("Deleted!", "Category has been deleted.");
+      dispatch(deleteCategory({ id: category._id }));
+
+      Alert.success(
+        "Deleted!",
+        `Category "${category.name}" has been deleted.`,
+      );
     }
   };
 

@@ -91,3 +91,31 @@ export const updateCategory = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+export const deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ID
+    if (!id) {
+      return res.status(400).json({ msg: "Category ID is required" });
+    }
+
+    // Check if category exists
+    const category = await Category.findById(id);
+    if (!category) {
+      return res.status(404).json({ msg: "Category not found" });
+    }
+
+    // Delete category
+    await Category.findByIdAndDelete(id);
+
+    res.status(200).json({
+      msg: "Category deleted successfully",
+      _id: id,
+    });
+  } catch (err) {
+    console.error("Error deleting category:", err);
+    res.status(500).json(err);
+  }
+};

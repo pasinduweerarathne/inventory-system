@@ -3,6 +3,7 @@ import {
   getAllCategories,
   updateCategory,
   insertCategory,
+  deleteCategory,
 } from "../functions/categories";
 
 const initialState = {
@@ -50,13 +51,28 @@ const categorySlice = createSlice({
       .addCase(updateCategory.fulfilled, (state, action) => {
         state.loading = false;
         const index = state.categories.findIndex(
-          (cat) => cat.id === action.payload.id,
+          (cat) => cat._id === action.payload._id,
         );
         if (index !== -1) {
           state.categories[index] = action.payload;
         }
       })
       .addCase(updateCategory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+    builder
+      .addCase(deleteCategory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteCategory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.categories = state.categories.filter(
+          (cat) => cat._id !== action.payload._id,
+        );
+      })
+      .addCase(deleteCategory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
