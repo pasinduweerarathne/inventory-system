@@ -45,3 +45,49 @@ export const getAllCategories = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+export const updateCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { name } = req.body;
+
+    console.log("Updating category:", id, name);
+
+    // Validate ID
+    if (!id) {
+      return res.status(400).json({ msg: "Category ID is required" });
+    }
+
+    // Validate name
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ msg: "Category name is required" });
+    }
+
+    name = formatName(name.trim());
+
+    // Check if category exists
+    const category = await Category.findById(id);
+    if (!category) {
+      return res.status(404).json({ msg: "Category not found" });
+    }
+
+    // Check duplicate (exclude current category)
+    const exists = await Category.findOne({
+      _id: { $ne: id },
+      name: { $regex: `^${name}$`, $options: "i" },
+    });
+
+    if (exists) {
+      return res.status(400).json({ msg: "Category already exists" });
+    }
+
+    // Update
+    category.name = name;
+    await category.save();
+
+    res.status(200).json(category);
+  } catch (err) {
+    console.error("Error updating category:", err);
+    res.status(500).json(err);
+  }
+};

@@ -6,7 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   getAllCategories,
   insertCategory,
-} from "../store/slices/categorySlice";
+  updateCategory,
+} from "../store/functions/categories";
 
 const Categories = () => {
   const dispatch = useDispatch();
@@ -109,11 +110,7 @@ const Categories = () => {
     });
 
     if (result.isConfirmed) {
-      const updated = categories.map((c) =>
-        c.id === category.id ? { ...c, name: result.value } : c,
-      );
-
-      setCategories(updated);
+      dispatch(updateCategory({ id: category._id, name: result.value }));
 
       Alert.success("Updated!", "Category updated successfully");
     }
@@ -131,9 +128,6 @@ const Categories = () => {
     });
 
     if (result.isConfirmed) {
-      const updated = categories.filter((c) => c.id !== category.id);
-      setCategories(updated);
-
       Alert.success("Deleted!", "Category has been deleted.");
     }
   };

@@ -1,33 +1,9 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import API from "@/api/axios";
-
-export const getAllCategories = createAsyncThunk(
-  "categories/getAllCategories",
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await API.get("/categories/get-all");
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(
-        err.response?.data?.msg || "Failed to fetch categories",
-      );
-    }
-  },
-);
-
-export const insertCategory = createAsyncThunk(
-  "categories/insertCategory",
-  async ({ name }, { rejectWithValue }) => {
-    try {
-      const res = await API.post("/categories/create", { name });
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(
-        err.response?.data?.msg || "Failed to insert category",
-      );
-    }
-  },
-);
+import { createSlice } from "@reduxjs/toolkit";
+import {
+  getAllCategories,
+  updateCategory,
+  insertCategory,
+} from "../functions/categories";
 
 const initialState = {
   categories: [],
@@ -63,6 +39,24 @@ const categorySlice = createSlice({
         state.categories.push(action.payload);
       })
       .addCase(insertCategory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+    builder
+      .addCase(updateCategory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCategory.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.categories.findIndex(
+          (cat) => cat.id === action.payload.id,
+        );
+        if (index !== -1) {
+          state.categories[index] = action.payload;
+        }
+      })
+      .addCase(updateCategory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
