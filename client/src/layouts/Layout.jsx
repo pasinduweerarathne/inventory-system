@@ -9,7 +9,7 @@ const Layout = ({ children }) => {
   return (
     <div className="flex h-screen">
       <Sidebar collapsed={collapsed} toggleCollapsed={toggleCollapsed} />
-      <div className="flex-1 bg-gray-100 p-6 overflow-auto">{children}</div>
+      <div className="flex-1 p-6 overflow-auto bg-green-50">{children}</div>
     </div>
   );
 };
