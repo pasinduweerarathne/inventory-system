@@ -17,9 +17,9 @@ export const getAllCategories = createAsyncThunk(
 
 export const insertCategory = createAsyncThunk(
   "categories/insertCategory",
-  async ({ name }, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
-      const res = await API.post("/categories/create", { name });
+      const res = await API.post("/categories/create", data);
       return res.data;
     } catch (err) {
       return rejectWithValue(
@@ -31,9 +31,10 @@ export const insertCategory = createAsyncThunk(
 
 export const updateCategory = createAsyncThunk(
   "categories/updateCategory",
-  async ({ id, name }, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
+    console.log(data);
     try {
-      const res = await API.patch(`/categories/update/${id}`, { name });
+      const res = await API.patch(`/categories/update/${data._id}`, data);
       return res.data;
     } catch (err) {
       return rejectWithValue(
@@ -52,6 +53,56 @@ export const deleteCategory = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.msg || "Failed to delete category",
+      );
+    }
+  },
+);
+
+export const insertSubCategory = createAsyncThunk(
+  "categories/insertSubCategory",
+  async (data, { rejectWithValue }) => {
+    try {
+      const res = await API.post(
+        `/categories/add-subcategory/${data.categoryId}`,
+        data,
+      );
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.msg || "Failed to insert sub-category",
+      );
+    }
+  },
+);
+
+export const updateSubCategory = createAsyncThunk(
+  "categories/updateSubCategory",
+  async (data, { rejectWithValue }) => {
+    try {
+      const res = await API.patch(
+        `/categories/update-subcategory/${data.categoryId}/${data.originalCode}`,
+        data.updatedSub,
+      );
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.msg || "Failed to update sub-category",
+      );
+    }
+  },
+);
+
+export const deleteSubCategory = createAsyncThunk(
+  "categories/deleteSubCategory",
+  async ({ categoryId, code }, { rejectWithValue }) => {
+    try {
+      const res = await API.delete(
+        `/categories/remove-subcategory/${categoryId}/${code}`,
+      );
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.msg || "Failed to delete sub-category",
       );
     }
   },

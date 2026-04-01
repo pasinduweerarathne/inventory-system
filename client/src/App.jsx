@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import Layout from "@/layouts/Layout";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Categories from "@/pages/Categories";
-import { useSelector } from "react-redux";
-import Layout from "@/layouts/Layout";
+import Products from "./pages/Products";
 
 function PrivateRoute({ children }) {
   const token = useSelector((state) => state.auth.token);
@@ -31,6 +32,16 @@ function App() {
             <Layout>
               <PrivateRoute>
                 <Categories />
+              </PrivateRoute>
+            </Layout>
+          }
+        />
+        <Route
+          path="/products"
+          element={
+            <Layout>
+              <PrivateRoute>
+                <Products />
               </PrivateRoute>
             </Layout>
           }
