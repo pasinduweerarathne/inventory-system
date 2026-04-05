@@ -14,14 +14,13 @@ export const getAllCategories = async (req, res) => {
     const categories = await Category.find().sort({ createdAt: -1 });
     res.status(200).json(categories);
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
   }
 };
 
 export const insertCategory = async (req, res) => {
   try {
     let { name, rangeStart, rangeEnd } = req.body;
-    console.log("Inserting category:", name, rangeStart, rangeEnd);
 
     // Validation
     if (!name || name.trim() === "") {

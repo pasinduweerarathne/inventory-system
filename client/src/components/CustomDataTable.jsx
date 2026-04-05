@@ -16,14 +16,14 @@ import {
 
 import { FaSearch } from "react-icons/fa";
 
-const CustomDataTable = ({ columns, data }) => {
+const CustomDataTable = ({ columns, data, tableTitle }) => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // 🔍 Search filter
   const filteredData = useMemo(() => {
-    return data.filter((row) =>
+    return data?.filter((row) =>
       columns.some((col) =>
         String(row[col.accessor]).toLowerCase().includes(search.toLowerCase()),
       ),
@@ -33,7 +33,7 @@ const CustomDataTable = ({ columns, data }) => {
   // 📄 Pagination slice
   const paginatedData = useMemo(() => {
     const start = page * rowsPerPage;
-    return filteredData.slice(start, start + rowsPerPage);
+    return filteredData?.slice(start, start + rowsPerPage);
   }, [filteredData, page, rowsPerPage]);
 
   return (
@@ -53,10 +53,6 @@ const CustomDataTable = ({ columns, data }) => {
         flexWrap="wrap"
         gap={2}
       >
-        <Typography variant="h6" fontWeight="bold">
-          Data Table
-        </Typography>
-
         <TextField
           size="small"
           placeholder="Search..."
@@ -81,8 +77,16 @@ const CustomDataTable = ({ columns, data }) => {
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-              {columns.map((col, index) => (
-                <TableCell key={index} sx={{ fontWeight: "bold" }}>
+              {columns?.map((col, index) => (
+                <TableCell
+                  key={index}
+                  sx={{
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   {col.header}
                 </TableCell>
               ))}
@@ -90,15 +94,17 @@ const CustomDataTable = ({ columns, data }) => {
           </TableHead>
 
           <TableBody>
-            {paginatedData.length > 0 ? (
+            {paginatedData?.length > 0 ? (
               paginatedData.map((row, rowIndex) => (
                 <TableRow key={rowIndex} hover sx={{ transition: "0.2s" }}>
                   {columns.map((col, colIndex) => (
                     <TableCell
                       key={colIndex}
                       sx={{
-                        fontWeight: colIndex === 0 ? 600 : 400,
-                        whiteSpace: colIndex === 0 ? "nowrap" : "normal",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        //  maxWidth: 150,
                       }}
                     >
                       {col.render
@@ -110,7 +116,7 @@ const CustomDataTable = ({ columns, data }) => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} align="center">
+                <TableCell colSpan={columns?.length} align="center">
                   No data found
                 </TableCell>
               </TableRow>
@@ -122,7 +128,7 @@ const CustomDataTable = ({ columns, data }) => {
       {/* 🔢 Pagination */}
       <TablePagination
         component="div"
-        count={filteredData.length}
+        count={filteredData?.length}
         page={page}
         onPageChange={(e, newPage) => setPage(newPage)}
         rowsPerPage={rowsPerPage}

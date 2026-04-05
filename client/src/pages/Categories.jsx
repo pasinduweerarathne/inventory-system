@@ -379,7 +379,11 @@ const Categories = () => {
         </Box>
       </Box>
 
-      <CustomDataTable data={categories} columns={columns} />
+      <CustomDataTable
+        data={categories}
+        columns={columns}
+        tableTitle="Categories Table"
+      />
 
       <AddFrom
         open={openModal}
