@@ -1,28 +1,29 @@
-import { Box, Breadcrumbs, Link, Typography } from "@mui/material";
+import {
+  Box,
+  Breadcrumbs,
+  IconButton,
+  Link,
+  Menu,
+  MenuItem,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import React, { useState } from "react";
-import { FaHome, FaPlus } from "react-icons/fa";
+import {
+  FaEdit,
+  FaEllipsisV,
+  FaEye,
+  FaHome,
+  FaPlus,
+  FaTrash,
+} from "react-icons/fa";
 import CustomDataTable from "../components/CustomDataTable";
 import AddProductForm from "../components/prodcts/AddProductForm";
-import { useDispatch, useSelector } from "react-redux";
-import { getAllProducts } from "../store/functions/products";
+import { Provider, shallowEqual, useDispatch, useSelector } from "react-redux";
+import { deleteProduct, getAllProducts } from "../store/functions/products";
 import { useEffect } from "react";
-
-const columns = [
-  { header: "Date", accessor: "createdAt" },
-  { header: "Shop", accessor: "shop" },
-  { header: "Product", accessor: "product" },
-  { header: "QTY", accessor: "qty" },
-  { header: "Size", accessor: "size" },
-  { header: "Color", accessor: "color" },
-  { header: "Cost Price", accessor: "costPrice" },
-  { header: "Total Cost", accessor: "totalCost" },
-  { header: "Actual MRP", accessor: "actualMrp" },
-  { header: "MRP", accessor: "mrp" },
-  { header: "Actual Revenue", accessor: "actualRevenue" },
-  { header: "Recommended Revenue", accessor: "recommendedRevenue" },
-  { header: "Profit", accessor: "profit" },
-  { header: "Actual Profit", accessor: "actualProfit" },
-];
+import Alert from "../components/Alerts";
+import Categories from "./Categories";
 
 const sizes = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL"];
 
@@ -30,10 +31,88 @@ const Products = () => {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuRow, setMenuRow] = useState(null);
   const [openAddProductModal, setOpenAddProductModal] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState({});
 
   const dispatch = useDispatch();
-  const { products } = useSelector((state) => state.products);
+  const { products, categories } = useSelector(
+    (state) => ({
+      products: state.products.products,
+      categories: state.categories.categories,
+    }),
+    shallowEqual,
+  );
+
+  const columns = [
+    { header: "Date", accessor: "createdAt" },
+    { header: "Shop", accessor: "shop" },
+    { header: "Product", accessor: "product" },
+    { header: "QTY", accessor: "qty" },
+    { header: "Size", accessor: "size" },
+    { header: "Color", accessor: "color" },
+    { header: "Category", accessor: "categoryId" },
+    { header: "Sub Category", accessor: "subCategoryCode" },
+    { header: "Cost Price", accessor: "costPrice" },
+    { header: "Total Cost", accessor: "totalCost" },
+    { header: "Actual MRP", accessor: "actualMrp" },
+    { header: "MRP", accessor: "mrp" },
+    { header: "Actual Revenue", accessor: "actualRevenue" },
+    { header: "Recommended Revenue", accessor: "recommendedRevenue" },
+    { header: "Profit", accessor: "profit" },
+    { header: "Actual Profit", accessor: "actualProfit" },
+    {
+      header: "Actions",
+      accessor: "actions",
+      render: (_, row) => {
+        const open = Boolean(menuAnchor) && menuRow === row._id;
+
+        return (
+          <Box>
+            <Tooltip title="Actions">
+              <IconButton size="small" onClick={(e) => handleClick(e, row)}>
+                <FaEllipsisV />
+              </IconButton>
+            </Tooltip>
+
+            <Menu
+              anchorEl={menuAnchor}
+              open={open}
+              onClose={handleClose}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    width: 200,
+                    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.08)",
+                    borderRadius: 1,
+                  },
+                },
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleProductEdit(row);
+                  handleClose();
+                }}
+              >
+                <FaEdit style={{ marginRight: 8 }} className="text-green-500" />{" "}
+                Edit
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleProductDelete(row);
+                  handleClose();
+                }}
+              >
+                <FaTrash style={{ marginRight: 8 }} className="text-red-500" />{" "}
+                Delete
+              </MenuItem>
+            </Menu>
+          </Box>
+        );
+      },
+    },
+  ];
 
   useEffect(() => {
     dispatch(getAllProducts());
@@ -57,10 +136,54 @@ const Products = () => {
   };
 
   const groupedData = groupWithChildren(products);
-  const formattedProducts = groupedData.map((product) => ({
-    ...product,
-    createdAt: new Date(product.createdAt).toLocaleString(), // converts to readable format
-  }));
+  const formattedProducts = groupedData.map((product) => {
+    const category = categories?.find((cat) => cat._id === product.categoryId);
+    const subCategory = category?.subcategories?.find(
+      (subCate) => subCate.code === product.subCategoryCode,
+    );
+
+    return {
+      ...product,
+      createdAt: new Date(product.createdAt).toLocaleString(),
+      categoryId: category?.name,
+      subCategoryCode: `${subCategory?.name} (${subCategory?.code})`,
+    };
+  });
+
+  const handleClick = (event, row) => {
+    setMenuAnchor(event.currentTarget);
+    setMenuRow(row._id);
+  };
+
+  const handleClose = () => {
+    setMenuAnchor(null);
+    setMenuRow(null);
+  };
+
+  const handleProductDelete = (row) => {
+    setMenuAnchor(null);
+    Alert.delete(
+      `This action will permanently delete product "${row.product}".`,
+      row.product,
+      "text",
+    ).then((result) => {
+      if (result.isConfirmed) {
+        dispatch(deleteProduct({ id: row._id })).then((data) => {
+          if (data.meta.requestStatus === "fulfilled") {
+            Alert.success("Deleted", "Product deleted successfully");
+            dispatch(getAllProducts());
+          } else {
+            Alert.error("Error", data.payload || "Failed to delete category");
+          }
+        });
+      }
+    });
+  };
+
+  const handleProductEdit = (row) => {
+    setOpenAddProductModal(true);
+    setSelectedProduct(row);
+  };
 
   return (
     <div>
@@ -102,7 +225,6 @@ const Products = () => {
           <button
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded shadow transition-all cursor-pointer"
             onClick={() => {
-              setCurrentProduct(null);
               setOpenAddProductModal(true);
             }}
           >
@@ -116,7 +238,11 @@ const Products = () => {
 
       <AddProductForm
         open={openAddProductModal}
-        onClose={() => setOpenAddProductModal(false)}
+        onClose={() => {
+          setOpenAddProductModal(false);
+          setSelectedProduct(null);
+        }}
+        selectedProduct={selectedProduct}
       />
     </div>
   );

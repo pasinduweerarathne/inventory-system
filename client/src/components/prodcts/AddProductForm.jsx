@@ -13,17 +13,17 @@ import {
   Paper,
   Divider,
 } from "@mui/material";
-import Alert from "../Alerts";
 import { getAllCategories } from "../../store/functions/categories";
-
-const categories = [
-  { id: 1, name: "Clothing", subcategories: ["Shirts", "Pants", "Jackets"] },
-  { id: 2, name: "Electronics", subcategories: ["Phones", "Laptops", "TVs"] },
-];
+import {
+  getAllProducts,
+  insertProduct,
+  updateProduct,
+} from "../../store/functions/products";
+import toast from "react-hot-toast";
 
 const sizes = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL"];
 
-const AddProductModal = ({ open, onClose }) => {
+const AddProductModal = ({ open, onClose, selectedProduct }) => {
   const [formData, setFormData] = useState({
     shop: "",
     product: "",
@@ -48,6 +48,7 @@ const AddProductModal = ({ open, onClose }) => {
 
   const dispatch = useDispatch();
   const { categories } = useSelector((state) => state.categories);
+  const { error } = useSelector((state) => state.products);
 
   useEffect(() => {
     dispatch(getAllCategories());
@@ -70,10 +71,58 @@ const AddProductModal = ({ open, onClose }) => {
   }, [formData.qty, formData.costPrice, formData.actualMrp]);
 
   useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  useEffect(() => {
     setSelectedCategory(
       categories.find((cat) => cat.name === formData.category),
     );
   }, [formData.category, categories]);
+
+  useEffect(() => {
+    if (open) {
+      if (selectedProduct) {
+        const categoryObj = categories.find(
+          (cat) => cat.name === selectedProduct.categoryId,
+        );
+        const subCatObj = categoryObj?.subcategories?.find(
+          (sub) =>
+            sub.code ===
+            Number(selectedProduct.subCategoryCode.match(/\((\d+)\)/)?.[1]),
+        );
+
+        setFormData({
+          shop: selectedProduct.shop || "",
+          product: selectedProduct.product || "",
+          color: selectedProduct.color || "",
+          size: selectedProduct.size || "",
+          actualMrp: selectedProduct.actualMrp || 0,
+          qty: selectedProduct.qty || 0,
+          costPrice: selectedProduct.costPrice || 0,
+          category: categoryObj?.name || "",
+          subCategory: subCatObj?.name || "",
+        });
+        setSelectedCategory(categoryObj || {});
+      } else {
+        setFormData({
+          shop: "",
+          product: "",
+          size: "",
+          color: "",
+          qty: 0,
+          costPrice: 0,
+          actualMrp: 0,
+          category: "",
+          subCategory: "",
+        });
+        setSelectedCategory({});
+      }
+      setErrors({});
+    }
+  }, [open, selectedProduct, categories]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -143,10 +192,6 @@ const AddProductModal = ({ open, onClose }) => {
     return newErrors;
   };
 
-  //   const selectedCategory = categories.find(
-  //     (cat) => cat.name === formData.category,
-  //   );
-
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -161,34 +206,38 @@ const AddProductModal = ({ open, onClose }) => {
     const subCat = selectedCategory?.subcategories?.find(
       (sub) => sub.name === formData.subCategory,
     );
-    const subCategoryCode = subCat?.code;
+    const subCategoryCode = Number(subCat?.code);
 
     const dataToSubmit = {
       shop: formData.shop,
       product: formData.product,
       size: formData.size,
       color: formData.color,
-      qty: formData.qty,
-      costPrice: formData.costPrice,
-      actualMrp: formData.actualMrp,
+      qty: Number(formData.qty),
+      costPrice: Number(formData.costPrice),
+      actualMrp: Number(formData.actualMrp),
       categoryId,
       subCategoryCode,
     };
 
-    // setFormData({
-    //   shop: "",
-    //   product: "",
-    //   size: "",
-    //   color: "",
-    //   qty: 0,
-    //   costPrice: 0,
-    //   actualMrp: 0,
-    //   categoryId: "",
-    //   subCategoryCode: "",
-    // });
+    if (selectedProduct) {
+      const payload = { ...dataToSubmit, prodId: selectedProduct._id };
+      dispatch(updateProduct(payload)).then((data) => {
+        if (data.meta.requestStatus === "fulfilled") {
+          onClose();
+          toast.success("Product updated successfuly");
+        }
+      });
+    } else {
+      dispatch(insertProduct(dataToSubmit)).then((data) => {
+        if (data.meta.requestStatus === "fulfilled") {
+          onClose();
+          toast.success("Product saved successfuly");
+        }
+      });
+    }
 
-    // onClose();
-    // Alert.success("success", "Product saved successfuly");
+    dispatch(getAllProducts());
   };
 
   return (
@@ -213,7 +262,7 @@ const AddProductModal = ({ open, onClose }) => {
         }}
       >
         <Typography variant="h6" textAlign="center" mb={3}>
-          Add New Category
+          {selectedProduct ? "Update Product" : "Add New Product"}
         </Typography>
 
         {/* Row 1: Shop + Product */}
@@ -439,7 +488,7 @@ const AddProductModal = ({ open, onClose }) => {
           type="submit"
           className="bg-green-600 hover:bg-green-700 text-white py-3 rounded uppercase"
         >
-          Add Product
+          {selectedProduct ? "Update Product" : "Add Product"}
         </button>
       </Box>
     </Modal>
